@@ -1,12 +1,25 @@
-Currency Exchange REST API Project
-Java 21
-Подробное описание задания: https://zhukovsd.github.io/java-backend-learning-course/Projects/CurrencyExchange/
+💱 Currency Exchange REST API
+
+A simple currency exchange backend built with Java 21. This REST API allows for managing currencies, exchange rates, and converting amounts between currencies.
 
 
-Currencies
+📦 Features
+
+    🔍 Get a list of all currencies and exchange rates
+
+    ➕ Add new currencies and rates
+
+    ✏️ Update existing exchange rates
+
+    🔁 Convert money between currencies in real-time
+
+🚀 API Endpoints
+🔹 Currencies
 GET /currencies
 
-Returns list of all currencies. Example of response:
+Returns all available currencies.
+
+Response:
 
 [
   {
@@ -20,26 +33,26 @@ Returns list of all currencies. Example of response:
     "name": "Euro",
     "code": "EUR",
     "sign": "€"
-  },
-  "..."
-]
-
-GET /currency/USD
-
-Returns particular currency. The currency code is specified in the query address Example of response:
-
-[
-  {
-    "id": 0,
-    "name": "United States dollar",
-    "code": "USD",
-    "sign": "$"
   }
 ]
 
+GET /currency/{code}
+
+Returns a currency by its code (e.g. USD).
+
+Example: GET /currency/USD
 POST /currencies
 
-Adding a new currency to the database. Data is passed in the body of request in the x-www-form-urlencoded. The form fields are name, code, symbol. Example of response (inserted record):
+Add a new currency.
+Content-Type: application/x-www-form-urlencoded
+
+Body:
+
+name=Czech Koruna
+code=CZK
+sign=Kč
+
+Response:
 
 [
   {
@@ -50,135 +63,80 @@ Adding a new currency to the database. Data is passed in the body of request in 
   }
 ]
 
-Exchange rates
+🔹 Exchange Rates
 GET /exchangeRates
 
-Returns list of all exchange rates. Example of response:
+Returns all exchange rates.
+
+Response:
 
 [
   {
     "id": 0,
-    "baseCurrency": {
-      "id": 0,
-      "name": "United States dollar",
-      "code": "USD",
-      "sign": "$"
-    },
-    "targetCurrency": {
-      "id": 1,
-      "name": "Euro",
-      "code": "EUR",
-      "sign": "€"
-    },
+    "baseCurrency": { ... },
+    "targetCurrency": { ... },
     "rate": 0.93
-  },
-  {
-    "id": 1,
-    "baseCurrency": {
-      "id": 0,
-      "name": "United States dollar",
-      "code": "USD",
-      "sign": "$"
-    },
-    "targetCurrency": {
-      "id": 2,
-      "name": "Czech Koruna",
-      "code": "CZK",
-      "sign": "Kč"
-    },
-    "rate": 22.16
-  },
-  "..."
+  }
 ]
 
+GET /exchangeRate/{BASE}{TARGET}
+
+Returns a specific exchange rate.
+
+Example: GET /exchangeRate/USDEUR
 POST /exchangeRates
 
-Adding a new exchange rate to the database. Data is passed in the body of request in the x-www-form-urlencoded. The form fields are baseCurrencyCode, targetCurrencyCode, rate. Example of response (inserted record):
+Add a new exchange rate.
+Content-Type: application/x-www-form-urlencoded
+
+Body:
+
+baseCurrencyCode=EUR
+targetCurrencyCode=CZK
+rate=23.75
+
+Response:
 
 [
   {
     "id": 2,
-    "baseCurrency": {
-      "id": 1,
-      "name": "Euro",
-      "code": "EUR",
-      "sign": "€"
-    },
-    "targetCurrency": {
-      "id": 2,
-      "name": "Czech Koruna",
-      "code": "CZK",
-      "sign": "Kč"
-    },
+    "baseCurrency": { ... },
+    "targetCurrency": { ... },
     "rate": 23.75
   }
 ]
 
-GET /exchangeRate/USDEUR
+PATCH /exchangeRate/{BASE}{TARGET}
 
-Returns a particular exchange rate. The currency pair is specified by consecutive currency codes in the query address. Example of response:
+Update an existing exchange rate.
+Content-Type: application/x-www-form-urlencoded
 
-[
-  {
-    "id": 0,
-    "baseCurrency": {
-      "id": 0,
-      "name": "United States dollar",
-      "code": "USD",
-      "sign": "$"
-    },
-    "targetCurrency": {
-      "id": 1,
-      "name": "Euro",
-      "code": "EUR",
-      "sign": "€"
-    },
-    "rate": 0.93
-  }
-]
+Body:
 
-PATCH /exchangeRate/USDEUR
+rate=22.24
 
-Updates the existing exchange rate in the database. The currency pair is specified by consecutive currency codes in the query address. The data is passed in the body of the request in the x-www-form-urlencoded. The only form field is rate. Example of response (inserted record):
+Example: PATCH /exchangeRate/USDCZK
+🔹 Currency Conversion
+GET /exchange?from=BASE&to=TARGET&amount=VALUE
 
-[
-  {
-    "id": 1,
-    "baseCurrency": {
-      "id": 0,
-      "name": "United States dollar",
-      "code": "USD",
-      "sign": "$"
-    },
-    "targetCurrency": {
-      "id": 2,
-      "name": "Czech Koruna",
-      "code": "CZK",
-      "sign": "Kč"
-    },
-    "rate": 22.24
-  }
-]
+Converts the given amount from one currency to another.
 
-Currency exchange
-GET /exchange?from=BASE_CURRENCY_CODE&to=TARGET_CURRENCY_CODE&amount=$AMOUNT
+Example:
+GET /exchange?from=USD&to=CZK&amount=100
 
-Calculate the conversion of a particular amount of money from one currency to another. The currency pair and amount is specified in the query address. Example of response:
+Response:
 
 {
-  "baseCurrency": {
-    "id": 0,
-    "name": "United States dollar",
-    "code": "USD",
-    "sign": "$"
-  },
-  "targetCurrency": {
-    "id": 2,
-    "name": "Czech Koruna",
-    "code": "CZK",
-    "sign": "Kč"
-  },
+  "baseCurrency": { ... },
+  "targetCurrency": { ... },
   "rate": 22.24,
   "amount": 100.00,
   "convertedAmount": 2224.00
 }
+
+
+
+
+
+
+   
