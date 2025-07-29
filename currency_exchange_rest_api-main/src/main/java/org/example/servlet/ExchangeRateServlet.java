@@ -14,10 +14,8 @@ import org.example.exception.InvalidParameterException;
 import org.example.exception.NotFoundException;
 import org.example.service.ExchangeRateService;
 import org.example.utils.ValidationUtils;
-
 import java.io.IOException;
 import java.math.BigDecimal;
-
 import static org.example.utils.MappingUtils.convertToDto;
 
 @WebServlet("/exchangeRate/*")

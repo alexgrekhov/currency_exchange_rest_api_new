@@ -15,8 +15,8 @@ public class ExchangeRateService {
     private final ExchangeRateDao exchangeRateDao = new JdbcExchangeRateDao();
 
     public ExchangeRate save(ExchangeRateRequestDto exchangeRateRequestDto) {
-        String baseCurrencyCode = exchangeRateRequestDto.baseCurrencyCode();   // ✅
-        String targetCurrencyCode = exchangeRateRequestDto.targetCurrencyCode(); // ✅
+        String baseCurrencyCode = exchangeRateRequestDto.baseCurrencyCode();
+        String targetCurrencyCode = exchangeRateRequestDto.targetCurrencyCode();
 
         Currency baseCurrency = currencyDao.findByCode(baseCurrencyCode)
                 .orElseThrow(() -> new NotFoundException("Currency with code '" + baseCurrencyCode + "' not found"));
@@ -26,15 +26,15 @@ public class ExchangeRateService {
         ExchangeRate exchangeRate = new ExchangeRate(
                 baseCurrency,
                 targetCurrency,
-                exchangeRateRequestDto.rate() // ✅
+                exchangeRateRequestDto.rate()
         );
 
         return exchangeRateDao.save(exchangeRate);
     }
 
     public ExchangeRate update(ExchangeRateRequestDto exchangeRateRequestDto) {
-        String baseCurrencyCode = exchangeRateRequestDto.baseCurrencyCode();   // ✅
-        String targetCurrencyCode = exchangeRateRequestDto.targetCurrencyCode(); // ✅
+        String baseCurrencyCode = exchangeRateRequestDto.baseCurrencyCode();
+        String targetCurrencyCode = exchangeRateRequestDto.targetCurrencyCode();
 
         Currency baseCurrency = currencyDao.findByCode(baseCurrencyCode)
                 .orElseThrow(() -> new NotFoundException("Currency with code '" + baseCurrencyCode + "' not found"));
@@ -44,7 +44,7 @@ public class ExchangeRateService {
         ExchangeRate exchangeRate = new ExchangeRate(
                 baseCurrency,
                 targetCurrency,
-                exchangeRateRequestDto.rate() // ✅
+                exchangeRateRequestDto.rate()
         );
 
         return exchangeRateDao.update(exchangeRate)

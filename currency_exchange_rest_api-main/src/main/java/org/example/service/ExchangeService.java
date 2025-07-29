@@ -6,15 +6,11 @@ import org.example.dto.ExchangeRequestDto;
 import org.example.dto.ExchangeResponseDto;
 import org.example.entity.ExchangeRate;
 import org.example.exception.NotFoundException;
-
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
-
 import static java.math.MathContext.DECIMAL64;
 import static org.example.utils.MappingUtils.convertToDto;
-
 public class ExchangeService {
 
     private final ExchangeRateDao exchangeRateDao = new JdbcExchangeRateDao();
@@ -24,12 +20,12 @@ public class ExchangeService {
                 .orElseThrow(() -> new NotFoundException(
                         String.format(
                                 "Exchange rate '%s' - '%s' not found in the database",
-                                exchangeRequestDto.baseCurrencyCode(), // ✅
-                                exchangeRequestDto.targetCurrencyCode() // ✅
+                                exchangeRequestDto.baseCurrencyCode(),
+                                exchangeRequestDto.targetCurrencyCode()
                         )
                 ));
 
-        BigDecimal amount = exchangeRequestDto.amount(); // ✅
+        BigDecimal amount = exchangeRequestDto.amount();
         BigDecimal convertedAmount = amount.multiply(exchangeRate.getRate())
                 .setScale(2, RoundingMode.HALF_EVEN);
 
@@ -37,7 +33,7 @@ public class ExchangeService {
                 convertToDto(exchangeRate.getBaseCurrency()),
                 convertToDto(exchangeRate.getTargetCurrency()),
                 exchangeRate.getRate(),
-                amount, // ✅
+                amount,
                 convertedAmount
         );
     }
@@ -58,15 +54,15 @@ public class ExchangeService {
 
     private Optional<ExchangeRate> findByDirectRate(ExchangeRequestDto exchangeRequestDto) {
         return exchangeRateDao.findByCodes(
-                exchangeRequestDto.baseCurrencyCode(), // ✅
-                exchangeRequestDto.targetCurrencyCode() // ✅
+                exchangeRequestDto.baseCurrencyCode(),
+                exchangeRequestDto.targetCurrencyCode()
         );
     }
 
     private Optional<ExchangeRate> findByIndirectRate(ExchangeRequestDto exchangeRequestDto) {
         Optional<ExchangeRate> exchangeRateOptional = exchangeRateDao.findByCodes(
-                exchangeRequestDto.targetCurrencyCode(), // ✅
-                exchangeRequestDto.baseCurrencyCode() // ✅
+                exchangeRequestDto.targetCurrencyCode(),
+                exchangeRequestDto.baseCurrencyCode()
         );
 
         if (exchangeRateOptional.isEmpty()) {
@@ -88,8 +84,8 @@ public class ExchangeService {
     }
 
     private Optional<ExchangeRate> findByCrossRate(ExchangeRequestDto exchangeRequestDto) {
-        Optional<ExchangeRate> usdToBaseOptional = exchangeRateDao.findByCodes("USD", exchangeRequestDto.baseCurrencyCode()); // ✅
-        Optional<ExchangeRate> usdToTargetOptional = exchangeRateDao.findByCodes("USD", exchangeRequestDto.targetCurrencyCode()); // ✅
+        Optional<ExchangeRate> usdToBaseOptional = exchangeRateDao.findByCodes("USD", exchangeRequestDto.baseCurrencyCode());
+        Optional<ExchangeRate> usdToTargetOptional = exchangeRateDao.findByCodes("USD", exchangeRequestDto.targetCurrencyCode());
 
         if (usdToBaseOptional.isEmpty() || usdToTargetOptional.isEmpty()) {
             return Optional.empty();

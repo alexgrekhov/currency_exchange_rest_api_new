@@ -8,10 +8,7 @@ import org.example.exception.EntityExistsException;
 import org.sqlite.SQLiteErrorCode;
 import org.sqlite.SQLiteException;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +46,7 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
             }
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to read exchange rate with id '" + id + "' from the database"
+                    "Failed to read exchange rate with id '" + id + "' from the database", e
             );
         }
         return Optional.empty();
@@ -88,7 +85,7 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
             return exchangeRates;
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to read exchange rates from the database"
+                    "Failed to read exchange rates from the database", e
             );
         }
     }
@@ -98,19 +95,18 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
         final String query = """
             INSERT INTO Exchange_rates (base_currency_id, target_currency_id, rate)
             VALUES (?, ?, ?)
-            RETURNING id
             """;
 
         try (Connection connection = DatabaseConnectionManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setLong(1, entity.getBaseCurrency().getId());
             statement.setLong(2, entity.getTargetCurrency().getId());
             statement.setBigDecimal(3, entity.getRate());
 
-            ResultSet resultSet = statement.executeQuery();
+            int affectedRows = statement.executeUpdate();
 
-            if (!resultSet.next()) {
+            if (affectedRows == 0) {
                 throw new DatabaseOperationException(
                         String.format("Failed to save exchange rate '%s' to '%s' to the database",
                                 entity.getBaseCurrency().getCode(),
@@ -118,7 +114,15 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
                 );
             }
 
-            entity.setId(resultSet.getLong("id"));
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    entity.setId(generatedKeys.getLong(1));
+                } else {
+                    throw new DatabaseOperationException(
+                            "Failed to retrieve ID for the saved exchange rate");
+                }
+            }
+
             return entity;
 
         } catch (SQLException e) {
@@ -134,7 +138,7 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
             throw new DatabaseOperationException(
                     String.format("Failed to save exchange rate '%s' to '%s' to the database",
                             entity.getBaseCurrency().getCode(),
-                            entity.getTargetCurrency().getCode())
+                            entity.getTargetCurrency().getCode()), e
             );
         }
     }
@@ -145,7 +149,6 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
             UPDATE Exchange_rates
             SET rate = ?
             WHERE base_currency_id = ? AND target_currency_id = ?
-            RETURNING id
             """;
 
         try (Connection connection = DatabaseConnectionManager.getConnection();
@@ -155,15 +158,14 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
             statement.setLong(2, entity.getBaseCurrency().getId());
             statement.setLong(3, entity.getTargetCurrency().getId());
 
-            ResultSet resultSet = statement.executeQuery();
+            int affectedRows = statement.executeUpdate();
 
-            if (resultSet.next()) {
-                entity.setId(resultSet.getLong("id"));
+            if (affectedRows > 0) {
                 return Optional.of(entity);
             }
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to update exchange rate with id '" + entity.getId() + "' in the database"
+                    "Failed to update exchange rate with id '" + entity.getId() + "' in the database", e
             );
         }
         return Optional.empty();
@@ -184,7 +186,7 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
 
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to delete exchange rate with id '" + id + "' from the database"
+                    "Failed to delete exchange rate with id '" + id + "' from the database", e
             );
         }
     }
@@ -203,13 +205,10 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
                 tc.full_name AS target_name,
                 tc.sign AS target_sign,
                 er.rate AS rate
-            FROM exchange_rates er
-            JOIN currencies bc ON er.base_currency_id = bc.id
-            JOIN currencies tc ON er.target_currency_id = tc.id
-            WHERE (
-                base_currency_id = (SELECT c.id FROM currencies c WHERE c.code = ?)
-                AND target_currency_id = (SELECT c2.id FROM currencies c2 WHERE c2.code = ?)
-            )
+            FROM Exchange_rates er
+            JOIN Currencies bc ON er.base_currency_id = bc.id
+            JOIN Currencies tc ON er.target_currency_id = tc.id
+            WHERE bc.code = ? AND tc.code = ?
             """;
 
         try (Connection connection = DatabaseConnectionManager.getConnection();
@@ -226,7 +225,7 @@ public class JdbcExchangeRateDao implements ExchangeRateDao {
         } catch (SQLException e) {
             throw new DatabaseOperationException(
                     String.format("Failed to read exchange rate '%s' to '%s' from the database",
-                            baseCurrencyCode, targetCurrencyCode)
+                            baseCurrencyCode, targetCurrencyCode), e
             );
         }
         return Optional.empty();

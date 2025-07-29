@@ -12,10 +12,7 @@ import org.example.exception.DatabaseOperationException;
 import org.example.exception.EntityExistsException;
 import org.example.exception.InvalidParameterException;
 import org.example.exception.NotFoundException;
-
 import java.io.IOException;
-
-import static jakarta.servlet.http.HttpServletResponse.*;
 
 @WebFilter("/*")
 public class ExceptionHandlingFilter extends HttpFilter {

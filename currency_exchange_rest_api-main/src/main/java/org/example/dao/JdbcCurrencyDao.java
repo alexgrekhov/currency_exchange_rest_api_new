@@ -7,10 +7,7 @@ import org.example.exception.EntityExistsException;
 import org.sqlite.SQLiteErrorCode;
 import org.sqlite.SQLiteException;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +33,7 @@ public class JdbcCurrencyDao implements CurrencyDao {
             }
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to read currency with id '" + id + "' from the database"
+                    "Failed to read currency with id '" + id + "' from the database", e
             );
         }
         return Optional.empty();
@@ -62,7 +59,7 @@ public class JdbcCurrencyDao implements CurrencyDao {
             return currencies;
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to read currencies from the database"
+                    "Failed to read currencies from the database", e
             );
         }
     }
@@ -72,25 +69,36 @@ public class JdbcCurrencyDao implements CurrencyDao {
         final String query = """
             INSERT INTO Currencies (code, full_name, sign)
             VALUES (?, ?, ?)
-            RETURNING *
             """;
 
         try (Connection connection = DatabaseConnectionManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, entity.getCode());
             statement.setString(2, entity.getFullName());
             statement.setString(3, entity.getSign());
 
-            ResultSet resultSet = statement.executeQuery();
+            int affectedRows = statement.executeUpdate();
 
-            if (!resultSet.next()) {
+            if (affectedRows == 0) {
                 throw new DatabaseOperationException(
                         "Failed to save currency with code '" + entity.getCode() + "' to the database"
                 );
             }
 
-            return getCurrency(resultSet);
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return new Currency(
+                            generatedKeys.getLong(1),
+                            entity.getCode(),
+                            entity.getFullName(),
+                            entity.getSign()
+                    );
+                } else {
+                    throw new DatabaseOperationException(
+                            "Failed to retrieve ID for the saved currency");
+                }
+            }
 
         } catch (SQLException e) {
             if (e instanceof SQLiteException exception) {
@@ -101,7 +109,7 @@ public class JdbcCurrencyDao implements CurrencyDao {
                 }
             }
             throw new DatabaseOperationException(
-                    "Failed to save currency with code '" + entity.getCode() + "' to the database"
+                    "Failed to save currency with code '" + entity.getCode() + "' to the database", e
             );
         }
     }
@@ -112,7 +120,6 @@ public class JdbcCurrencyDao implements CurrencyDao {
             UPDATE Currencies
             SET code = ?, full_name = ?, sign = ?
             WHERE id = ?
-            RETURNING *
             """;
 
         try (Connection connection = DatabaseConnectionManager.getConnection();
@@ -123,14 +130,14 @@ public class JdbcCurrencyDao implements CurrencyDao {
             statement.setString(3, entity.getSign());
             statement.setLong(4, entity.getId());
 
-            ResultSet resultSet = statement.executeQuery();
+            int affectedRows = statement.executeUpdate();
 
-            if (resultSet.next()) {
-                return Optional.of(getCurrency(resultSet));
+            if (affectedRows > 0) {
+                return Optional.of(entity);
             }
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to update currency with id '" + entity.getId() + "' in the database"
+                    "Failed to update currency with id '" + entity.getId() + "' in the database", e
             );
         }
         return Optional.empty();
@@ -151,7 +158,7 @@ public class JdbcCurrencyDao implements CurrencyDao {
 
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to delete currency with id '" + id + "' from the database"
+                    "Failed to delete currency with id '" + id + "' from the database", e
             );
         }
     }
@@ -175,7 +182,7 @@ public class JdbcCurrencyDao implements CurrencyDao {
             }
         } catch (SQLException e) {
             throw new DatabaseOperationException(
-                    "Failed to read currency with code '" + code + "' from the database"
+                    "Failed to read currency with code '" + code + "' from the database", e
             );
         }
         return Optional.empty();
@@ -190,3 +197,4 @@ public class JdbcCurrencyDao implements CurrencyDao {
         );
     }
 }
+
